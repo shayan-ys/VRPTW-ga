@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List
 from random import shuffle
 import math
+import re
 
 PRINT_BENCHMARKS = False
 
@@ -139,7 +140,7 @@ class Population:
     # plot
     plot_x_axis = []
     plot_y_axis = []
-    plot_x_div = 10
+    plot_x_div = 100
     plot_x_window = 100
     plot_fig = None
     plot_subplot = None
@@ -246,7 +247,8 @@ class Population:
         self.plot_y_axis = self.plot_y_axis[-self.plot_x_window:]
         self.subplot.set_xlim([self.plot_x_axis[0], self.plot_x_axis[-1]])
         self.subplot.set_ylim([min(self.plot_y_axis) - 5, max(self.plot_y_axis) + 5])
-        plt.suptitle('Best solution so far: ' + str(min(self.generation)), fontsize=10)
+        plt.suptitle('Best solution so far: ' + re.sub("(.{64})", "\\1\n", str(min(self.generation)), 0, re.DOTALL),
+                     fontsize=10)
         self.subplot.plot(self.plot_x_axis, self.plot_y_axis)
         plt.draw()
         self.fig.savefig("plot-output.png")
@@ -262,19 +264,31 @@ class Population:
         return self.__str__()
 
 
-customers = [
-    Customer(35, 35),
-    Customer(41, 49),
-    Customer(35, 17),
-    Customer(55, 45),
-    Customer(55, 20),
-]
+# customers = [
+#     Customer(35, 35),
+#     Customer(41, 49),
+#     Customer(35, 17),
+#     Customer(55, 45),
+#     Customer(55, 20),
+# ]
+customers = []
 
-MAX_GEN = 50000
+from test_data import R101
 
-customers_travel_cost_table = get_travel_cost_table_customers(customers, print_result=True)
+for key, c_data in R101.items():
+    try:
+        cord = c_data['coordinates']
+        customers.append(Customer(cord['x'], cord['y']))
+    except:
+        pass
 
-ga_pop = Population(10, len(customers))
-print(str(ga_pop))
+# print(len(customers))
+
+MAX_GEN = 500000
+
+customers_travel_cost_table = get_travel_cost_table_customers(customers, print_result=False)
+
+ga_pop = Population(100, len(customers))
+# print(str(ga_pop))
 best_chrome = ga_pop.evolve()
 print(best_chrome)
