@@ -33,8 +33,8 @@ def couples(iterable):
 
 
 class Customer:
-    x = None    # type: int
-    y = None    # type: int
+    x = None  # type: int
+    y = None  # type: int
 
     def __init__(self, x_coordinates: int, y_coordinates: int):
         self.x = x_coordinates
@@ -42,6 +42,10 @@ class Customer:
 
 
 List_Customer = List[Customer]
+
+
+class Deport(Customer):
+    pass
 
 
 def get_travel_cost_customers_pair(c1: Customer, c2: Customer) -> float:
@@ -94,17 +98,17 @@ class Chromosome:
         return customers_travel_cost_table[c1][c2]
 
     def get_value(self) -> float:
+        deport = 0
         value_holder = 0
+        value_holder += self.get_travel_cost(deport, self.route[0])
         for c_first, c_second in pairwise(self.route):
             value_holder += self.get_travel_cost(c_first, c_second)
+        value_holder += self.get_travel_cost(deport, self.route[-1])
         return value_holder
 
     def __iter__(self):
         for r in self.route:
             yield r
-
-    # def __gt__(self, other):
-    #     return self.value > other.value
 
     def __lt__(self, other):
         return self.value < other.value
@@ -113,7 +117,7 @@ class Chromosome:
         return self.value == other.value
 
     def __str__(self):
-        return str(self.route) + " value= " + str(self.value)
+        return str([0] + self.route + [0]) + " value= " + str(self.value)
 
     def __repr__(self):
         return self.__str__()
@@ -271,16 +275,20 @@ class Population:
 #     Customer(55, 45),
 #     Customer(55, 20),
 # ]
-customers = []
 
 from test_data import R101
 
+customers = []
+de_cord = R101['deport']['coordinates']
+customers.append(Deport(de_cord['x'], de_cord['y']))
+
 for key, c_data in R101.items():
-    try:
-        cord = c_data['coordinates']
-        customers.append(Customer(cord['x'], cord['y']))
-    except:
-        pass
+    if 'customer' in key:
+        try:
+            cord = c_data['coordinates']
+            customers.append(Customer(cord['x'], cord['y']))
+        except:
+            pass
 
 # print(len(customers))
 
