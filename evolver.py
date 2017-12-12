@@ -135,27 +135,32 @@ class Population:
     selection_repeat = True
     parent_selection_ratio = 0.8
     mutation_ratio = 0.1
+    genocide_ratio = 0.2
     # plot
     plot_x_axis = []
     plot_y_axis = []
     plot_x_div = 10
-    plot_x_window = 10
+    plot_x_window = 100
     plot_fig = None
     plot_subplot = None
 
     def __init__(self, size: int, chromosome_width: int):
         self.pop_size = size
         self.chromosome_width = chromosome_width
-        self.initial_generation()
+        self.generation = self.initial_generation()
         plt.ion()
         self.fig, self.subplot = plt.subplots()
 
-    def initial_generation(self):
+    def initial_generation(self, init_size: int=None) -> List_Chromosome:
+        if not init_size:
+            init_size = self.pop_size
+        generation_holder = []
         random_indices = list(range(self.chromosome_width))
-        for i in range(self.pop_size):
+        for i in range(init_size):
             shuffle(random_indices)
             init_chromosome = Chromosome(random_indices)
-            self.generation.append(init_chromosome)
+            generation_holder.append(init_chromosome)
+        return generation_holder
 
     def crossover(self, parent1: Chromosome, parent2: Chromosome) -> (Chromosome, Chromosome):
         # noinspection PyCallingNonCallable
@@ -218,9 +223,21 @@ class Population:
         while self.gen_index < MAX_GEN:
             if self.gen_index % self.plot_x_div == 0:
                 self.plot_draw()
+                if min(self.generation).value == max(self.generation).value:
+                    self.generation = self.genocide(self.generation)
             self.generation = self.next_gen()
             self.gen_index += 1
         return min(self.generation)
+
+    def genocide(self, generation: List_Chromosome):
+        surviving_selection_size = int(len(generation) * self.parent_selection_ratio)
+        new_gen_size = len(generation) - surviving_selection_size
+        # noinspection PyCallingNonCallable
+        survivors = self.selection_method(generation, surviving_selection_size, k=self.selection_pressure,
+                                          repeat=self.selection_repeat,
+                                          reverse=(not self.chromosome_higher_value_fitter))
+        new_gen = self.initial_generation(new_gen_size)
+        return survivors + new_gen
 
     def plot_draw(self):
         self.plot_x_axis.append(self.gen_index)
@@ -229,6 +246,7 @@ class Population:
         self.plot_y_axis = self.plot_y_axis[-self.plot_x_window:]
         self.subplot.set_xlim([self.plot_x_axis[0], self.plot_x_axis[-1]])
         self.subplot.set_ylim([min(self.plot_y_axis) - 5, max(self.plot_y_axis) + 5])
+        plt.suptitle('Best solution so far: ' + str(min(self.generation)), fontsize=10)
         self.subplot.plot(self.plot_x_axis, self.plot_y_axis)
         plt.draw()
         self.fig.savefig("plot-output.png")
