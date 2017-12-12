@@ -1,7 +1,8 @@
 from selections import selection_tournament_deterministic
-from crossovers import crossover_uox, fill_remaining
+from crossovers import crossover_uox
 from mutations import mutation_inversion
 
+import matplotlib.pyplot as plt
 from datetime import datetime
 from typing import List
 from random import shuffle
@@ -134,11 +135,20 @@ class Population:
     selection_repeat = True
     parent_selection_ratio = 0.8
     mutation_ratio = 0.1
+    # plot
+    plot_x_axis = []
+    plot_y_axis = []
+    plot_x_div = 10
+    plot_x_window = 10
+    plot_fig = None
+    plot_subplot = None
 
     def __init__(self, size: int, chromosome_width: int):
         self.pop_size = size
         self.chromosome_width = chromosome_width
         self.initial_generation()
+        plt.ion()
+        self.fig, self.subplot = plt.subplots()
 
     def initial_generation(self):
         random_indices = list(range(self.chromosome_width))
@@ -206,9 +216,23 @@ class Population:
     def evolve(self) -> Chromosome:
         global MAX_GEN
         while self.gen_index < MAX_GEN:
+            if self.gen_index % self.plot_x_div == 0:
+                self.plot_draw()
             self.generation = self.next_gen()
             self.gen_index += 1
         return min(self.generation)
+
+    def plot_draw(self):
+        self.plot_x_axis.append(self.gen_index)
+        self.plot_y_axis.append(min(self.generation).value)
+        self.plot_x_axis = self.plot_x_axis[-self.plot_x_window:]
+        self.plot_y_axis = self.plot_y_axis[-self.plot_x_window:]
+        self.subplot.set_xlim([self.plot_x_axis[0], self.plot_x_axis[-1]])
+        self.subplot.set_ylim([min(self.plot_y_axis) - 5, max(self.plot_y_axis) + 5])
+        self.subplot.plot(self.plot_x_axis, self.plot_y_axis)
+        plt.draw()
+        self.fig.savefig("plot-output.png")
+        plt.pause(0.0001)
 
     def __str__(self):
         pop_str = "Generation:" + str(self.gen_index) + '\n'
@@ -228,7 +252,7 @@ customers = [
     Customer(55, 20),
 ]
 
-MAX_GEN = 100000
+MAX_GEN = 50000
 
 customers_travel_cost_table = get_travel_cost_table_customers(customers, print_result=True)
 
@@ -236,5 +260,3 @@ ga_pop = Population(10, len(customers))
 print(str(ga_pop))
 best_chrome = ga_pop.evolve()
 print(best_chrome)
-
-# [3, 1, 0, 2, 4] value= 68.01551440644553
