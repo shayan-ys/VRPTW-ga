@@ -1,4 +1,4 @@
-print_benchmarks = False
+print_benchmarks = True
 
 MAX_GEN = 500000
 

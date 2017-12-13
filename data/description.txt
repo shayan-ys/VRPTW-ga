@@ -1,0 +1,12 @@
+This data was scraped from http://web.cba.neu.edu/~msolomon/. 
+
+The files are named as follows ProblemType_VehicleCapacity.csv. E.g., R101_200.csv
+means the file contains data for the R101 problem and the vehicle capacity is
+intended to be 200.
+   
+See http://web.cba.neu.edu/~msolomon/problems.htm for an explaination of the problem
+types.
+
+This data is provided for convenience only and is not guaranteed to be correct,
+please consider the data provided on Solomon's website, linked above, to be the
+authoritative source.

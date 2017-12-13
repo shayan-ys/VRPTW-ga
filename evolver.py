@@ -3,12 +3,14 @@ from nodes import Deport, Customer, CustomerDistanceTable
 from selections import selection_tournament_deterministic
 from crossovers import crossover_uox, crossover_cx
 from mutations import mutation_inversion
+from csv_reader import csv_read
 import ga_params
 import utils
 
 import matplotlib.pyplot as plt
 from typing import List
 from random import shuffle
+from datetime import datetime
 import re
 
 
@@ -41,7 +43,7 @@ class Population:
     selection_repeat = True
     parent_selection_ratio = 0.8
     mutation_ratio = 0.1
-    genocide_ratio = 0.2
+    genocide_ratio = 0
     # plot
     plot_x_axis = []
     plot_y_axis = []
@@ -126,18 +128,26 @@ class Population:
         return new_gen
 
     def evolve(self) -> Chromosome:
+        process_timer_start = datetime.now()
         while self.gen_index < ga_params.MAX_GEN:
             if self.gen_index % self.plot_x_div == 0:
+                process_time = datetime.now() - process_timer_start
+                process_timer_start = datetime.now()
+                plot_process_timer_start = datetime.now()
                 self.plot_draw()
-                if min(self.generation).value == max(self.generation).value:
+                if ga_params.print_benchmarks:
+                    print('### Process time of ' + str(self.plot_x_div) + ' generation: '
+                          + str(process_time))
+                    print('### Plot time: ' + str(datetime.now() - plot_process_timer_start))
+                if self.genocide_ratio > 0 and min(self.generation).value == max(self.generation).value:
                     self.generation = self.genocide(self.generation)
             self.generation = self.next_gen()
             self.gen_index += 1
         return min(self.generation)
 
     def genocide(self, generation: List_Chromosome):
-        surviving_selection_size = int(len(generation) * self.parent_selection_ratio)
-        new_gen_size = len(generation) - surviving_selection_size
+        new_gen_size = int(len(generation) * self.genocide_ratio)
+        surviving_selection_size = len(generation) - new_gen_size
         # noinspection PyCallingNonCallable
         survivors = self.selection_method(generation, surviving_selection_size, k=self.selection_pressure,
                                           repeat=self.selection_repeat,
@@ -177,30 +187,21 @@ class Population:
         return self.__str__()
 
 
-# customers = [
-#     Customer(35, 35),
-#     Customer(41, 49),
-#     Customer(35, 17),
-#     Customer(55, 45),
-#     Customer(55, 20),
-# ]
+header_map = {
+    'XCOORD': 'x_coordinates',
+    'YCOORD': 'y_coordinates',
+    'DEMAND': 'demand',
+    'READY_TIME': 'ready_time',
+    'DUE_DATE': 'due_time',
+    'SERVICE_TIME': 'service_time',
+}
 
-from test_data import R101
+customers_input_read = csv_read('R101_200', header_map=header_map)
+customers = [Deport(**customers_input_read[0])]
+customers += [Customer(**customer_dict) for customer_dict in customers_input_read]
 
-customers = []
-de = R101['deport']
-de_cord = de['coordinates']
-customers.append(Deport(de_cord['x'], de_cord['y'], de['due_time']))
-
-for key, c in R101.items():
-    if 'customer' in key:
-        try:
-            cord = c['coordinates']
-            customers.append(Customer(cord['x'], cord['y'], c['demand'], c['ready_time'], c['due_time'],
-                                      c['service_time']))
-        except:
-            pass
-
+# for c in customers:
+#     print(c)
 # print(len(customers))
 
 customers_distance_table = CustomerDistanceTable(customers)

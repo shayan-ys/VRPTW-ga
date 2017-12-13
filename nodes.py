@@ -13,20 +13,28 @@ class Customer:
     service_time = None  # type: int
 
     def __init__(self, x_coordinates: int, y_coordinates: int, demand: int, ready_time: int, due_time: int,
-                 service_time: int):
-        self.x = x_coordinates
-        self.y = y_coordinates
-        self.demand = demand
-        self.ready_time = ready_time
-        self.due_time = due_time
-        self.service_time = service_time
+                 service_time: int, **kwargs):
+        self.x = int(float(x_coordinates))
+        self.y = int(float(y_coordinates))
+        self.demand = int(float(demand))
+        self.ready_time = int(float(ready_time))
+        self.due_time = int(float(due_time))
+        self.service_time = int(float(service_time))
+
+    def __str__(self):
+        return 'coordinated: ' + str(self.x) + ' - ' + str(self.y)\
+               + ' | demand: ' + str(self.demand) + ' | ready_time: ' + str(self.ready_time)\
+               + ' | due_time: ' + str(self.due_time) + ' | service_time: ' + str(self.service_time)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 List_Customer = List[Customer]
 
 
 class Deport(Customer):
-    def __init__(self, x_coordinates: int, y_coordinates: int, due_time: int):
+    def __init__(self, x_coordinates: int, y_coordinates: int, due_time: int, **kwargs):
         super(Deport, self).__init__(x_coordinates, y_coordinates, demand=0, ready_time=0, due_time=due_time,
                                      service_time=0)
 
