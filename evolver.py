@@ -1,126 +1,26 @@
+from chromosome import Chromosome as BaseChromosome
+from nodes import Deport, Customer, CustomerDistanceTable
 from selections import selection_tournament_deterministic
 from crossovers import crossover_uox
 from mutations import mutation_inversion
+import utils
 
 import matplotlib.pyplot as plt
-from datetime import datetime
 from typing import List
 from random import shuffle
-import math
 import re
 
-PRINT_BENCHMARKS = False
 
-
-def pairwise(a: list) -> iter:
-    """
-    Iterate list items two by two
-    Source: https://stackoverflow.com/a/5764948/4744051
-    :param a: Given list, e.g.: a = [5, 7, 11, 4, 5]
-    :return: Iterable pairs: [5, 7], [7, 11], [11, 4], [4, 5]
-    """
-    return zip(a[:-1], a[1:])
-
-
-def couples(iterable):
-    """
-    Iterate over pairs (even-odd)
-    :param iterable: s = s0, s1, s2, s3, s4, s5, ...
-    :return: (s0, s1), (s2, s3), (s4, s5), ...
-    """
-    a = iter(iterable)
-    return zip(a, a)
-
-
-class Customer:
-    x = None  # type: int
-    y = None  # type: int
-
-    def __init__(self, x_coordinates: int, y_coordinates: int):
-        self.x = x_coordinates
-        self.y = y_coordinates
-
-
-List_Customer = List[Customer]
-
-
-class Deport(Customer):
-    pass
-
-
-def get_travel_cost_customers_pair(c1: Customer, c2: Customer) -> float:
-    return math.hypot(c2.x - c1.x, c2.y - c1.y)
-
-
-def get_travel_cost_table_customers(customer_list: List_Customer, print_result: bool=False) -> list:
-    global PRINT_BENCHMARKS
-    cost_table_timer = datetime.now()
-
-    cost_table_holder = []
-
-    for needle_index, customer_needle in enumerate(customer_list):
-
-        cost_table_holder.append([])
-        for in_stack_index, customer_in_stack in enumerate(customer_list):
-
-            if needle_index == in_stack_index:
-                cost = 0
-            elif needle_index > in_stack_index:
-                cost = cost_table_holder[in_stack_index][needle_index]
-            else:
-                cost = get_travel_cost_customers_pair(customer_needle, customer_in_stack)
-
-            cost_table_holder[needle_index].append(cost)
-
-    if PRINT_BENCHMARKS:
-        print('--- distance table pre-computation time: ' + str(datetime.now() - cost_table_timer))
-
-    if print_result:
-        print("--- Travel Cost between Customers")
-        for row in cost_table_holder:
-            print(row)
-        print("--- END | Travel Cost Between Customers")
-
-    return cost_table_holder
-
-
-class Chromosome:
-    route = []      # type: list
-    value = None  # type: float
-
-    def __init__(self, route: iter):
-        self.route = list(route)
-        self.value = self.get_value()
+class Chromosome(BaseChromosome):
+    @staticmethod
+    def get_distance(source: int, dest: int) -> float:
+        global customers_distance_table     # type: CustomerDistanceTable
+        return customers_distance_table.get_distance(source, dest)
 
     @staticmethod
-    def get_travel_cost(c1: int, c2: int) -> float:
-        global customers_travel_cost_table
-        return customers_travel_cost_table[c1][c2]
-
-    def get_value(self) -> float:
-        deport = 0
-        value_holder = 0
-        value_holder += self.get_travel_cost(deport, self.route[0])
-        for c_first, c_second in pairwise(self.route):
-            value_holder += self.get_travel_cost(c_first, c_second)
-        value_holder += self.get_travel_cost(deport, self.route[-1])
-        return value_holder
-
-    def __iter__(self):
-        for r in self.route:
-            yield r
-
-    def __lt__(self, other):
-        return self.value < other.value
-
-    def __eq__(self, other):
-        return self.value == other.value
-
-    def __str__(self):
-        return str([0] + self.route + [0]) + " value= " + str(self.value)
-
-    def __repr__(self):
-        return self.__str__()
+    def get_node(index: int) -> Customer:
+        global customers
+        return customers[index]
 
 
 List_Chromosome = List[Chromosome]
@@ -194,7 +94,7 @@ class Population:
     def get_offsprings(self, generation: List_Chromosome) -> List_Chromosome:
         selected_parents = self.parent_selection(generation)
         offsprings_holder = []
-        for parent1, parent2 in couples(selected_parents):
+        for parent1, parent2 in utils.couples(selected_parents):
             child1, child2 = self.crossover(parent1, parent2)
             offsprings_holder += [child1, child2]
         return offsprings_holder
@@ -279,14 +179,16 @@ class Population:
 from test_data import R101
 
 customers = []
-de_cord = R101['deport']['coordinates']
-customers.append(Deport(de_cord['x'], de_cord['y']))
+de = R101['deport']
+de_cord = de['coordinates']
+customers.append(Deport(de_cord['x'], de_cord['y'], de['due_time']))
 
-for key, c_data in R101.items():
+for key, c in R101.items():
     if 'customer' in key:
         try:
-            cord = c_data['coordinates']
-            customers.append(Customer(cord['x'], cord['y']))
+            cord = c['coordinates']
+            customers.append(Customer(cord['x'], cord['y'], c['demand'], c['ready_time'], c['due_time'],
+                                      c['service_time']))
         except:
             pass
 
@@ -294,7 +196,7 @@ for key, c_data in R101.items():
 
 MAX_GEN = 500000
 
-customers_travel_cost_table = get_travel_cost_table_customers(customers, print_result=False)
+customers_distance_table = CustomerDistanceTable(customers)
 
 ga_pop = Population(100, len(customers))
 # print(str(ga_pop))
