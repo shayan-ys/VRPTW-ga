@@ -11,6 +11,7 @@ class Chromosome:
     value = None                # type: float
 
     vehicles_count = None       # type: int
+    vehicles_routes = None      # type: list
     route_rounds = None         # type: int
     total_travel_dist = None    # type: float
     total_elapsed_time = None   # type: float
@@ -25,7 +26,8 @@ class Chromosome:
         self.value = self.get_cost_score()
 
     def initial_port(self):
-        self.vehicles_count = 0
+        self.vehicles_count = 1
+        self.vehicles_routes = [[0]]
         self.route_rounds = 0
         self.total_travel_dist = 0
         self.total_elapsed_time = 0
@@ -79,6 +81,7 @@ class Chromosome:
         self.total_travel_dist += distance
         self.elapsed_time += self.get_travel_time(distance)
         self.max_elapsed_time = max(self.elapsed_time, self.max_elapsed_time)
+        self.vehicles_routes[-1].append(dest)
         if dest != 0:
             dest_customer = self.get_node(dest)  # type: Node
             self.current_load += dest_customer.demand
@@ -88,6 +91,7 @@ class Chromosome:
 
     def add_vehicle(self):
         self.vehicles_count += 1
+        self.vehicles_routes.append([0])
         self.elapsed_time = 0
         self.current_load = 0
 
@@ -130,6 +134,18 @@ class Chromosome:
             deport_working_hours=self.max_elapsed_time)
         return total_travel_cost + total_vehicles_and_deport_working_hours_cost
 
+    def plot_get_route_cords(self) -> list:
+        rounds = []
+        for vehicle_route in self.vehicles_routes:
+            route_x_holder = []
+            route_y_holder = []
+            for customer_index in vehicle_route:
+                customer = self.get_node(customer_index)    # type: Node
+                route_x_holder.append(customer.x)
+                route_y_holder.append(customer.y)
+            rounds.append((route_x_holder, route_y_holder))
+        return rounds
+
     def __iter__(self):
         for r in self.route:
             yield r
@@ -143,7 +159,7 @@ class Chromosome:
     def __str__(self):
         return str(self.route) + ", value= " + str(self.value) + ", vehicles_count= " + str(self.vehicles_count) \
                + ", total deport visits=" + str(self.route_rounds) \
-               + ", deport working hours=" + str(self.max_elapsed_time)
+               + ", deport working hours=" + str(self.max_elapsed_time) + ", routes= " + str(self.vehicles_routes)
 
     def __repr__(self):
         return self.__str__()

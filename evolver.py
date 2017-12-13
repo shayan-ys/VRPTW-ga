@@ -55,6 +55,7 @@ class Population:
         self.generation = self.initial_generation()
         plt.ion()
         self.fig, self.subplot = plt.subplots()
+        self.fig2, self.subplot2 = plt.subplots()
 
     def initial_generation(self, init_size: int=None) -> List_Chromosome:
         if not init_size:
@@ -145,17 +146,25 @@ class Population:
         return survivors + new_gen
 
     def plot_draw(self):
+        plt.figure(1)
+        min_generation = min(self.generation)   # type: Chromosome
         self.plot_x_axis.append(self.gen_index)
-        self.plot_y_axis.append(min(self.generation).value)
+        self.plot_y_axis.append(min_generation.value)
         self.plot_x_axis = self.plot_x_axis[-self.plot_x_window:]
         self.plot_y_axis = self.plot_y_axis[-self.plot_x_window:]
         self.subplot.set_xlim([self.plot_x_axis[0], self.plot_x_axis[-1]])
         self.subplot.set_ylim([min(self.plot_y_axis) - 5, max(self.plot_y_axis) + 5])
-        plt.suptitle('Best solution so far: ' + re.sub("(.{64})", "\\1\n", str(min(self.generation)), 0, re.DOTALL),
+        plt.suptitle('Best solution so far: ' + re.sub("(.{64})", "\\1\n", str(min_generation), 0, re.DOTALL),
                      fontsize=10)
+        print(min_generation)
         self.subplot.plot(self.plot_x_axis, self.plot_y_axis)
+
+        plt.figure(2)
+        for route_x, route_y in min_generation.plot_get_route_cords():
+            plt.plot(route_x, route_y)
         plt.draw()
         self.fig.savefig("plot-output.png")
+        self.fig2.savefig("plot2-output.png")
         plt.pause(0.0001)
 
     def __str__(self):
@@ -197,6 +206,7 @@ for key, c in R101.items():
 MAX_GEN = 500000
 
 customers_distance_table = CustomerDistanceTable(customers)
+# print(str(customers_distance_table))
 
 ga_pop = Population(100, len(customers))
 # print(str(ga_pop))
