@@ -1,8 +1,9 @@
 from chromosome import Chromosome as BaseChromosome
 from nodes import Deport, Customer, CustomerDistanceTable
 from selections import selection_tournament_deterministic
-from crossovers import crossover_uox
+from crossovers import crossover_uox, crossover_cx
 from mutations import mutation_inversion
+import ga_params
 import utils
 
 import matplotlib.pyplot as plt
@@ -32,7 +33,7 @@ class Population:
     pop_size = 0    # type: int
     chromosome_width = 0    # type: int
     chromosome_higher_value_fitter = False
-    crossover_method = staticmethod(crossover_uox)
+    crossover_method = staticmethod(crossover_cx)
     mutation_method = staticmethod(mutation_inversion)  # type: staticmethod
     removing_method = staticmethod(selection_tournament_deterministic)
     selection_method = staticmethod(selection_tournament_deterministic)
@@ -125,8 +126,7 @@ class Population:
         return new_gen
 
     def evolve(self) -> Chromosome:
-        global MAX_GEN
-        while self.gen_index < MAX_GEN:
+        while self.gen_index < ga_params.MAX_GEN:
             if self.gen_index % self.plot_x_div == 0:
                 self.plot_draw()
                 if min(self.generation).value == max(self.generation).value:
@@ -202,8 +202,6 @@ for key, c in R101.items():
             pass
 
 # print(len(customers))
-
-MAX_GEN = 500000
 
 customers_distance_table = CustomerDistanceTable(customers)
 # print(str(customers_distance_table))
