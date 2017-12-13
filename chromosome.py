@@ -21,6 +21,8 @@ class Chromosome:
     max_elapsed_time = None     # type: float
     distance_table = None       # type: list
 
+    higher_value_fitter = False
+
     def __init__(self, route: iter):
         self.route = list(route)
         self.value = self.get_cost_score()
