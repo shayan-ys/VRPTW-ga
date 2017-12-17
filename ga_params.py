@@ -3,6 +3,8 @@ from selections import selection_tournament_deterministic
 from mutations import mutation_inversion, mutation_scramble
 
 print_benchmarks = True
+draw_plot = False
+export_spreadsheet = True
 
 MAX_GEN = 500000
 
@@ -12,7 +14,7 @@ vehicle_capacity = 200
 vehicles_count_over_deport_hours_preference = 1000
 
 run_file = {
-    'name': 'R101_200',
+    'name': 'C101_200',
     'header_map': {
         'XCOORD': 'x_coordinates',
         'YCOORD': 'y_coordinates',

@@ -158,6 +158,18 @@ class Chromosome:
     def __eq__(self, other):
         return self.value == other.value
 
+    def __radd__(self, other):
+        return self.value + other
+
+    def __add__(self, other):
+        return self.value + other
+
+    def __sub__(self, other):
+        return self.value - other
+
+    def __float__(self):
+        return float(self.value)
+
     def __str__(self):
         return str(self.route) + ", value= " + str(self.value) + ", vehicles_count= " + str(self.vehicles_count) \
                + ", total deport visits=" + str(self.route_rounds) \

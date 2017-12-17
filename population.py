@@ -1,12 +1,12 @@
 import chromosome as chrome
+from report import Reporter
 import ga_params
 import utils
 
-import matplotlib.pyplot as plt
 from typing import List
 from random import shuffle
 from datetime import datetime
-import re
+import numpy as np
 
 
 class Chromosome(chrome.Chromosome):
@@ -16,7 +16,7 @@ class Chromosome(chrome.Chromosome):
 List_Chromosome = List[Chromosome]
 
 
-class Population:
+class Population(Reporter):
     generation = []     # type: List_Chromosome
     gen_index = 0   # type: int
     pop_size = None    # type: int
@@ -32,20 +32,21 @@ class Population:
     mutation_ratio = None
     genocide_ratio = 0
     # plot
-    plot_x_axis = []
-    plot_y_axis = []
+    x_axis = []
+    y_axis = []
+    gen_index_div = None    # type: int
     plot_x_div = None
     plot_x_window = None
     plot_fig = None
     plot_subplot = None
     chromosome_class = None
 
-    def __init__(self, pop_size: int, chromosome_width: int,
+    def __init__(self, pop_size: int, chromosome_width: int, run_file_name: str,
                  crossover_method: staticmethod, mutation_method: staticmethod,
                  removing_method: staticmethod, selection_method: staticmethod,
                  selection_pressure: int, selection_repeat: bool,
                  parent_selection_ratio: float, mutation_ratio: float,
-                 plot_x_div: int=100, plot_x_window: int=100):
+                 gen_index_div: int=50, plot_x_div: int=200, plot_x_window: int=400):
         self.pop_size = int(pop_size)
         self.chromosome_width = int(chromosome_width)
         self.chromosome_higher_value_fitter = Chromosome.higher_value_fitter
@@ -58,12 +59,11 @@ class Population:
         self.parent_selection_ratio = float(parent_selection_ratio)
         self.mutation_ratio = float(mutation_ratio)
         self.plot_x_div = int(plot_x_div)
+        self.gen_index_div = int(gen_index_div)
         self.plot_x_window = int(plot_x_window)
 
         self.generation = self.initial_generation()
-        plt.ion()
-        self.fig, self.subplot = plt.subplots()
-        self.fig_node_connector, self.subplot2 = plt.subplots()
+        super(Population, self).__init__(run_name=run_file_name)
 
     def initial_generation(self, init_size: int=None) -> List_Chromosome:
         if not init_size:
@@ -135,20 +135,39 @@ class Population:
     def evolve(self) -> Chromosome:
         process_timer_start = datetime.now()
         while self.gen_index < ga_params.MAX_GEN:
-            if self.gen_index % self.plot_x_div == 0:
+            if self.gen_index % self.gen_index_div == 0:
                 process_time = datetime.now() - process_timer_start
                 process_timer_start = datetime.now()
-                plot_process_timer_start = datetime.now()
-                self.plot_draw()
                 if ga_params.print_benchmarks:
-                    print('### Process time of ' + str(self.plot_x_div) + ' generation: '
+                    print('### Process time of ' + str(self.gen_index_div) + ' generation: '
                           + str(process_time))
-                    print('### Plot time: ' + str(datetime.now() - plot_process_timer_start))
+                self.report(process_time)
                 if self.genocide_ratio > 0 and min(self.generation).value == max(self.generation).value:
                     self.generation = self.genocide(self.generation)
             self.generation = self.next_gen()
             self.gen_index += 1
         return min(self.generation)
+
+    def report(self, process_time=None):
+
+        self.x_axis.append(self.gen_index)
+        self.y_axis.append({
+            'best': min(self.generation),
+            'worst': max(self.generation),
+            'average': sum(self.generation) / len(self.generation),
+            'std': np.std(self.generation),
+            'process_time': process_time
+        })
+        if self.gen_index % self.plot_x_div:
+            if ga_params.draw_plot:
+                plot_process_timer_start = datetime.now()
+                self.plot_draw(x_axis=self.x_axis, y_axis=self.y_axis, latest_result=min(self.generation))
+                if ga_params.print_benchmarks:
+                    print('### Plot time: ' + str(datetime.now() - plot_process_timer_start))
+            if ga_params.export_spreadsheet:
+                self.export_spreadsheet(x_axis=self.x_axis, y_axis=self.y_axis)
+            self.x_axis = []
+            self.y_axis = []
 
     def genocide(self, generation: List_Chromosome):
         new_gen_size = int(len(generation) * self.genocide_ratio)
@@ -159,28 +178,6 @@ class Population:
                                           reverse=(not self.chromosome_higher_value_fitter))
         new_gen = self.initial_generation(new_gen_size)
         return survivors + new_gen
-
-    def plot_draw(self):
-        plt.figure(1)
-        min_generation = min(self.generation)   # type: Chromosome
-        self.plot_x_axis.append(self.gen_index)
-        self.plot_y_axis.append(min_generation.value)
-        self.plot_x_axis = self.plot_x_axis[-self.plot_x_window:]
-        self.plot_y_axis = self.plot_y_axis[-self.plot_x_window:]
-        self.subplot.set_xlim([self.plot_x_axis[0], self.plot_x_axis[-1]])
-        self.subplot.set_ylim([min(self.plot_y_axis) - 5, max(self.plot_y_axis) + 5])
-        plt.suptitle('Best solution so far: ' + re.sub("(.{64})", "\\1\n", str(min_generation), 0, re.DOTALL),
-                     fontsize=10)
-        print(min_generation)
-        self.subplot.plot(self.plot_x_axis, self.plot_y_axis)
-
-        plt.figure(2)
-        for route_x, route_y in min_generation.plot_get_route_cords():
-            plt.plot(route_x, route_y)
-        plt.draw()
-        self.fig.savefig("plot-output.png")
-        self.fig_node_connector.savefig("plot2-output.png")
-        plt.pause(0.000001)
 
     def __str__(self):
         pop_str = "Generation:" + str(self.gen_index) + '\n'
