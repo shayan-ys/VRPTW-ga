@@ -69,7 +69,7 @@ class Population(Reporter):
         if not init_size:
             init_size = self.pop_size
         generation_holder = []
-        random_indices = list(range(self.chromosome_width))
+        random_indices = list(range(1, self.chromosome_width))
         for i in range(init_size):
             shuffle(random_indices)
             init_chromosome = Chromosome(random_indices)

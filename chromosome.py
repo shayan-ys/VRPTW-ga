@@ -55,7 +55,7 @@ class Chromosome:
     def get_travel_cost(distance: float) -> float:
         return distance * ga_params.vehicle_cost_per_dist
 
-    def check_time(self, source: int, dest: int, distance: float=None) -> bool:
+    def check_time_and_go(self, source: int, dest: int, distance: float=None) -> bool:
         if distance is None:
             distance = self.get_distance(source, dest)
         dest_customer = self.get_node(dest)  # type: Node
@@ -63,7 +63,11 @@ class Chromosome:
         if elapsed_new <= dest_customer.due_time:
             return_time = self.get_travel_time(self.get_distance(dest, 0))
             deport_due_time = self.get_node(0).due_time
-            return elapsed_new + dest_customer.service_time + return_time <= deport_due_time
+            if elapsed_new + dest_customer.service_time + return_time <= deport_due_time:
+                self.move_vehicle(source, dest, distance=distance)
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -84,12 +88,12 @@ class Chromosome:
         self.elapsed_time += self.get_travel_time(distance)
         self.max_elapsed_time = max(self.elapsed_time, self.max_elapsed_time)
         self.vehicles_routes[-1].append(dest)
-        if dest != 0:
-            dest_customer = self.get_node(dest)  # type: Node
-            self.current_load += dest_customer.demand
-        else:
+        if dest == 0:
             self.route_rounds += 1
             self.current_load = 0
+        else:
+            dest_customer = self.get_node(dest)  # type: Node
+            self.current_load += dest_customer.demand
 
     def add_vehicle(self):
         self.vehicles_count += 1
@@ -105,10 +109,7 @@ class Chromosome:
         for source, dest in utils.pairwise([0] + self.route + [0]):
             if self.check_capacity(dest):
                 # current vehicle has the capacity to go from source to dest
-                if self.check_time(source, dest):
-                    # current vehicle has time to go from source to dest
-                    self.move_vehicle(source, dest)
-                else:
+                if not self.check_time_and_go(source, dest):
                     # current vehicle hasn't enough time to go to dest -> new vehicle
                     # current vehicle should go back from source to deport
                     self.move_vehicle(source, 0)
@@ -122,10 +123,7 @@ class Chromosome:
                 self.move_vehicle(source, 0)
                 # head from deport to dest
                 distance = self.get_distance(0, dest)  # just for speeding up (caching)
-                if self.check_time(0, dest, distance):
-                    # current vehicle can go from deport to dest
-                    self.move_vehicle(0, dest, distance)
-                else:
+                if not self.check_time_and_go(0, dest, distance):
                     # too late to go from deport to dest on current vehicle -> new vehicle
                     self.add_vehicle()
                     self.move_vehicle(0, dest, distance)
