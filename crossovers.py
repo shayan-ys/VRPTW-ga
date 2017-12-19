@@ -89,3 +89,50 @@ def crossover_cx(parent1: list, parent2: list) -> (list, list):
     # child1, child2 = crossover_cx([8, 4, 7, 3, 6, 2, 5, 1, 9, 0], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     # print(child1)   # 8 1 2 3 4 5 6 7 9 0
     # print(child2)   # 0 4 7 3 6 2 5 1 8 9
+
+
+def crossover_pmx(parent1: list, parent2: list) -> (list, list):
+    if len(parent1) != len(parent2):
+        raise Exception("Crossover error: Parents length are not equal")
+    chrome_len = len(parent1)
+    p1_inv = {}
+    p2_inv = {}
+    child1 = list(parent1)
+    child2 = list(parent2)
+
+    for i in range(chrome_len):
+        p1_inv[parent1[i]] = i
+        p2_inv[parent2[i]] = i
+
+    # crossover points random from 0 to chrome_len
+    cx_point1 = np.random.randint(0, chrome_len)
+    cx_point2 = np.random.randint(0, chrome_len - 1)
+
+    # prepare it for loop from point1 to point2
+    if cx_point2 >= cx_point1:
+        cx_point2 += 1
+    else:
+        cx_point1, cx_point2 = cx_point2, cx_point1
+
+    # Loop between crossover points
+    for i in range(cx_point1, cx_point2):
+        # Selected values before changing the parent
+        check1 = child1[i]
+        check2 = child2[i]
+        # Swap matched !
+        parent1[i], parent1[p1_inv[check2]] = check2, check1
+        parent2[i], parent2[p2_inv[check1]] = check1, check2
+
+        p1_inv[check1] = p1_inv[check2]
+        p1_inv[check2] = p1_inv[check1]
+        p2_inv[check1] = p2_inv[check2]
+        p2_inv[check2] = p2_inv[check1]
+
+    return child1, child2
+
+    # p1, p2 = list(range(1, 101)), list(range(1, 101))
+    #
+    # # child1, child2 = crossover_pmx([8, 4, 7, 3, 6, 2, 5, 1, 9], [1, 2, 3, 4, 5, 6, 7, 8, 9])
+    # child1, child2 = crossover_pmx(p1, p2)
+    # print(child1)
+    # print(child2)
