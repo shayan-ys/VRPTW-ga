@@ -45,7 +45,7 @@ class Population(Reporter):
                  crossover_method: staticmethod, mutation_method: staticmethod,
                  removing_method: staticmethod, selection_method: staticmethod,
                  selection_pressure: int, selection_repeat: bool,
-                 parent_selection_ratio: float, mutation_ratio: float,
+                 parent_selection_ratio: float, mutation_ratio: float, elitism_count: int=0,
                  gen_index_div: int=50, plot_x_div: int=200, plot_x_window: int=400):
         self.pop_size = int(pop_size)
         self.chromosome_width = int(chromosome_width)
@@ -58,6 +58,7 @@ class Population(Reporter):
         self.selection_repeat = bool(selection_repeat)
         self.parent_selection_ratio = float(parent_selection_ratio)
         self.mutation_ratio = float(mutation_ratio)
+        self.elitism_count = elitism_count
         self.plot_x_div = int(plot_x_div)
         self.gen_index_div = int(gen_index_div)
         self.plot_x_window = int(plot_x_window)
@@ -120,6 +121,15 @@ class Population(Reporter):
         for ch in selected_chromosomes:
             generation.remove(ch)
 
+    def elitism(self, generation: list) -> list:
+        elites = []
+        gen = list(generation)     # copy to make sure the generation itself doesn't change
+        for i in range(self.elitism_count):
+            best = min(gen)
+            gen.remove(best)
+            elites.append(best)
+        return elites
+
     def next_gen(self) -> List_Chromosome:
         # create new offsprings by crossover
         children = self.get_offsprings(self.generation)
@@ -127,6 +137,8 @@ class Population(Reporter):
         new_gen = self.generation + children    # type: List_Chromosome
         # permutation on the whole population
         self.permute_generation(new_gen)
+        # apply elitism
+        new_gen += self.elitism(self.generation)
         # defined pop_size - current population size should be removed using reversed tournament selection
         deceasing_size = max(len(new_gen) - self.pop_size, 0)
         self.remove_less_fitters(new_gen, deceasing_size)
