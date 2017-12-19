@@ -31,10 +31,10 @@ population = {
     'mutation_method': staticmethod(mutation_inversion),
     'removing_method': staticmethod(selection_tournament_deterministic),
     'selection_method': staticmethod(selection_tournament_deterministic),
-    'selection_pressure': 3,  # tournament size (k)
+    'selection_pressure': 2,  # tournament size (k)
     'selection_repeat': False,
-    'parent_selection_ratio': 0.6,
-    'mutation_ratio': 0.05,
+    'parent_selection_ratio': 0.8,
+    'mutation_ratio': 0.1,
     'elitism_count': 5,
     # plot
     'plot_x_div': 100,
