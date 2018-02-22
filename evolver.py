@@ -9,6 +9,8 @@ from random import shuffle
 import math
 import re
 
+from test_data_deap import DEAP_gr17_distance_table
+
 PRINT_BENCHMARKS = False
 
 
@@ -134,14 +136,14 @@ class Population:
     selection_method = staticmethod(selection_tournament_deterministic)
     selection_pressure = 2  # tournament size (k)
     selection_repeat = True
-    parent_selection_ratio = 0.8
-    mutation_ratio = 0.1
-    genocide_ratio = 0.2
+    parent_selection_ratio = 0.7
+    mutation_ratio = 0.2
+    genocide_ratio = 0.0
     # plot
     plot_x_axis = []
     plot_y_axis = []
-    plot_x_div = 100
-    plot_x_window = 100
+    plot_x_div = 10
+    plot_x_window = 10
     plot_fig = None
     plot_subplot = None
 
@@ -275,20 +277,24 @@ customers = []
 
 from test_data import R101
 
-for key, c_data in R101.items():
-    try:
-        cord = c_data['coordinates']
-        customers.append(Customer(cord['x'], cord['y']))
-    except:
-        pass
+# for key, c_data in R101.items():
+#     try:
+#         cord = c_data['coordinates']
+#         customers.append(Customer(cord['x'], cord['y']))
+#     except:
+#         pass
+
+for i in range(17):
+    customers.append(Customer(i, i))
 
 # print(len(customers))
 
-MAX_GEN = 500000
+MAX_GEN = 100
 
-customers_travel_cost_table = get_travel_cost_table_customers(customers, print_result=False)
+# customers_travel_cost_table = get_travel_cost_table_customers(customers, print_result=False)
+customers_travel_cost_table = DEAP_gr17_distance_table
 
-ga_pop = Population(100, len(customers))
+ga_pop = Population(300, len(customers))
 # print(str(ga_pop))
 best_chrome = ga_pop.evolve()
 print(best_chrome)
